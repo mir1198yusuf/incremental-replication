@@ -12,6 +12,7 @@ const srcKnex = require("knex")({
     database: process.env.SOURCE_DB,
     user: process.env.SOURCE_USERNAME,
     password: process.env.SOURCE_PASSWORD,
+    port: process.env.SOURCE_PORT,
   },
   searchPath: process.env.SOURCE_SCHEMA,
 });
@@ -23,6 +24,7 @@ const destKnex = require("knex")({
     database: process.env.DEST_DB,
     user: process.env.DEST_USERNAME,
     password: process.env.DEST_PASSWORD,
+    port: process.env.DEST_PORT,
   },
   searchPath: process.env.DEST_SCHEMA,
 });
@@ -130,6 +132,8 @@ async function doPgDumpRestoreForTable(tableName) {
       [
         "-h",
         process.env.SOURCE_HOST,
+        "-p",
+        process.env.SOURCE_PORT,
         "-U",
         process.env.SOURCE_USERNAME,
         process.env.SOURCE_DB,
@@ -146,7 +150,14 @@ async function doPgDumpRestoreForTable(tableName) {
     log(`Pgdump stdout ${pgDump.stdout}`);
     log(`Pgdump stderr ${pgDump.stderr}`);
 
-    const sed = cp.spawnSync("sed", ["-i", "", "/setval/d", "./dump.sql"]);
+    const sedOptions =
+      process.platform === "linux"
+        ? ["-i", "-e", "/setval/d", "./dump.sql"]
+        : process.platform === "darwin"
+        ? ["-i", "", "/setval/d", "./dump.sql"]
+        : null;
+    if (!sedOptions) throw new Error('sed options is null');
+    const sed = cp.spawnSync("sed", sedOptions);
     log(`Sed stdout ${sed.stdout}`);
     log(`Sed stderr ${sed.stderr}`);
 
@@ -157,6 +168,8 @@ async function doPgDumpRestoreForTable(tableName) {
         process.env.DEST_HOST,
         "-U",
         process.env.DEST_USERNAME,
+        "-p",
+        process.env.DEST_PORT,
         "-d",
         process.env.DEST_DB,
         "-f",

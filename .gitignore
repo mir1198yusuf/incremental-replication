@@ -3,6 +3,6 @@ node_modules
 sync-state/*
 *.sql
 test.js
-tables-config.json.*
+tables-config.json*
 logfile.txt
 !*.gitkeep
