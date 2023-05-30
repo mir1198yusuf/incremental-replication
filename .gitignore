@@ -1,0 +1,8 @@
+node_modules
+*.env
+sync-state/*
+*.sql
+test.js
+tables-config.json.*
+logfile.txt
+!*.gitkeep

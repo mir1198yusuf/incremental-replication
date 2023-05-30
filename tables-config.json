@@ -1,0 +1,12 @@
+[
+  {
+    "name": "table1",
+    "replication_key": "replication_key_column",
+    "unique_cols": ["pk1", "pk2"]
+  },
+  {
+    "name": "table2",
+    "replication_key": "replication_key_column",
+    "unique_cols": ["pk1"]
+  }
+]
