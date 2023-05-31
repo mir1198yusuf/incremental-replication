@@ -193,24 +193,24 @@ async function deduplicateRowsForTableInDestination(uniqueCols, tableName) {
     const whereClause = uniqueCols
       .map(
         (key) =>
-          `${process.env.DEST_SCHEMA}.${tableName}.${key} = ${process.env.DEST_SCHEMA}.${tableName}_stg.${key}`
+          `${process.env.DEST_SCHEMA}."${tableName}".${key} = ${process.env.DEST_SCHEMA}."${tableName}_stg".${key}`
       )
       .join(" AND ");
     await destKnex.raw(`
-        DELETE FROM ${process.env.DEST_SCHEMA}.${tableName}
+        DELETE FROM ${process.env.DEST_SCHEMA}."${tableName}"
         WHERE EXISTS (
           SELECT 1
-          FROM ${process.env.DEST_SCHEMA}.${tableName}_stg
+          FROM ${process.env.DEST_SCHEMA}."${tableName}_stg"
           WHERE ${whereClause}
         )
       `);
     await destKnex.raw(`
-        INSERT INTO ${process.env.DEST_SCHEMA}.${tableName}
+        INSERT INTO ${process.env.DEST_SCHEMA}."${tableName}"
         SELECT *
-        FROM ${process.env.DEST_SCHEMA}.${tableName}_stg
+        FROM ${process.env.DEST_SCHEMA}."${tableName}_stg"
       `);
     await destKnex.raw(`
-        DELETE FROM ${process.env.DEST_SCHEMA}.${tableName}_stg
+        DELETE FROM ${process.env.DEST_SCHEMA}."${tableName}_stg"
       `);
   } catch (error) {
     log(
@@ -246,7 +246,7 @@ async function performIncrementalReplicationForTable(
   try {
     log("Performing incremental replication for table");
     await destKnex.raw(`
-        DELETE FROM ${process.env.DEST_SCHEMA}.${tableName}_stg
+        DELETE FROM ${process.env.DEST_SCHEMA}."${tableName}_stg"
       `);
     let offset = 0;
     let data, lastRow;
