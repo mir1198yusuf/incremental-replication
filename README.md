@@ -49,4 +49,9 @@ _I created this non-GUI tool for replicating data from PostgreSQL database to an
 - Populate `.env` with your values.
 - Populate `tables-config.json` with your values. 
 - In your destination database, create the empty schema with same name as env variable `DEST_SCHEMA` (which will be same as env variable `SOURCE_SCHEMA`)
+- Start the replication by `node incremental_deduped_sync_pg_to_pg.js`
 
+### Additional usage points
+
+- Setup cron to run the tool at intervals.
+- By default `node incremental_deduped_sync_pg_to_pg.js` logs to terminal. Use `node incremental_deduped_sync_pg_to_pg.js > logfile.txt` to log the output to file. Or `node incremental_deduped_sync_pg_to_pg.js >> logfile.txt` to log the output to file in append-mode.
