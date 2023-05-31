@@ -33,14 +33,26 @@ async function main() {
   log(`Script starting. found ${tablesConfig.length} tables to sync`);
 
   try {
+    const summary = [];
     for (let i = 0; i < tablesConfig.length; i++) {
       log(`Starting replication for ${tablesConfig[i].name}`);
-      await initReplicationForTable(tablesConfig[i]);
+      const { syncType, rowCount } = await initReplicationForTable(
+        tablesConfig[i]
+      );
+      summary.push({
+        name: tablesConfig[i].name,
+        sync_type: syncType,
+        row_count: syncType === "incremental" ? rowCount : null,
+      });
       log(`Replication done for ${tablesConfig[i].name}`);
       log(`Remaining tables to sync : ${tablesConfig.length - (i + 1)}`);
     }
 
-    await webhookNotify(`Pipeline ${process.env.PIPELINE_NAME} succeeded`);
+    await webhookNotify(
+      `Pipeline ${
+        process.env.PIPELINE_NAME
+      } succeeded. Summary: ${tablesConfig.length} || ${summary.map(i => `${i.name}-${i.sync_type}-${i.sync_type==='incremental' ? i.row_count : 'NA'}`).join(' || ')}`
+    );
     log(`Script completed`);
   } catch (error) {
     log(`Main function error ${error.stack}`, true);
@@ -72,6 +84,8 @@ const initReplicationForTable = async (table) => {
     const tableName = table.name;
     const replicationKeyField = table.replication_key;
     const uniqueCols = table.unique_cols;
+    let syncType = "";
+    let rowCount = 0;
     let isResetNeededForTable = !(await areSchemasSameForTable(tableName));
     if (isResetNeededForTable) {
       await resetDestinationSchemaForTable(tableName);
@@ -80,9 +94,10 @@ const initReplicationForTable = async (table) => {
         tableName,
         replicationKeyField
       );
+      syncType = "initial";
     } else {
       const replicationKeyState = loadReplicationKeyStateFromFile(tableName);
-      const newReplicationKeyState =
+      const { newReplicationKeyState, totalReplicatedRows } =
         await performIncrementalReplicationForTable(
           tableName,
           replicationKeyField,
@@ -92,7 +107,10 @@ const initReplicationForTable = async (table) => {
       if (newReplicationKeyState) {
         saveReplicationKeyStateToFile(newReplicationKeyState, tableName);
       }
+      syncType = "incremental";
+      rowCount = totalReplicatedRows;
     }
+    return { syncType, rowCount };
   } catch (error) {
     log(`InitReplicationForTable function error ${error.stack}`, true);
     throw error;
@@ -156,7 +174,7 @@ async function doPgDumpRestoreForTable(tableName) {
         : process.platform === "darwin"
         ? ["-i", "", "/setval/d", "./dump.sql"]
         : null;
-    if (!sedOptions) throw new Error('sed options is null');
+    if (!sedOptions) throw new Error("sed options is null");
     const sed = cp.spawnSync("sed", sedOptions);
     log(`Sed stdout ${sed.stdout}`);
     log(`Sed stderr ${sed.stderr}`);
@@ -252,6 +270,7 @@ async function performIncrementalReplicationForTable(
     let data, lastRow;
     const batchSize = 1000;
     let batchNo = 0;
+    let totalReplicatedRows = 0;
     while (true) {
       data = await srcKnex
         .withSchema(process.env.SOURCE_SCHEMA)
@@ -293,9 +312,15 @@ async function performIncrementalReplicationForTable(
       lastRow = data[data.length - 1];
       batchNo++;
       log(`Replicated ${data.length} rows in batch number ${batchNo}`);
+      totalReplicatedRows += data.length;
     }
 
-    return lastRow ? lastRow[replicationKeyField].toISOString() : null;
+    return {
+      newReplicationKeyState: lastRow
+        ? lastRow[replicationKeyField].toISOString()
+        : null,
+      totalReplicatedRows,
+    };
   } catch (error) {
     log(
       `PerformIncrementalReplicationForTable function error ${error.stack}`,
