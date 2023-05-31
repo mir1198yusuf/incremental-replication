@@ -13,6 +13,7 @@ _I created this non-GUI tool for replicating data from PostgreSQL database to an
 - It explicitly syncs tables one-by-one, to avoid load on source database.
 - It does not require too much storage. In destination, it requires space equal to source database + size of one largest table in source.
 - While moving the tool to another server, you can retain the current cursor state of sync by copying the `sync-state` directory.
+- If you want to do full-refresh of a particular table at some point, just drop the `<table-name>` and `<table-name>_stg` tables in destination. In next sync, it will automatically use initial sync (pg-dump) mode for that table. To do full-refresh of all tables, do the same for all tables in destination.
 
 ### Current limits
 
@@ -20,7 +21,7 @@ _I created this non-GUI tool for replicating data from PostgreSQL database to an
 - Source and destination schema name must be same. Table names will also be same.
 - Only `timestamp` data type column in table is supported for now as `replication_key`.
 - One clone of this repository can be configured for one pipeline. One pipeline can sync only one schema. So, if you want to sync two schemas, clone this repository twice and configure
-- No near-future plans to add parallelism in sync. For me, this was required but it could be limitation for others.
+- No near-future plans to add parallelism in sync. For me, this (one table at a time) was required but it could be limitation for others.
 - Only `incremental-deduped` mode is supported for now. 
 - This will not work on Windows for now. This has been tested only on Ubuntu and Mac OS. Open a Node.js shell and run `process.platform`. If you get `linux` or `darwin`, this script will work.
 
@@ -32,6 +33,11 @@ _I created this non-GUI tool for replicating data from PostgreSQL database to an
 
 - I will be actively fixing the bugs. If you find any, please open an issue.
 - I will not be actively adding more features to it.
+
+### Caution
+
+- **For source database user for this tool, please use user which has NO write access on source to prevent any issue.**
+- Destination database user will need permission to create/drop/read table in destination.
 
 ### How to use ? 
 
