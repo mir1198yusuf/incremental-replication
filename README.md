@@ -47,6 +47,7 @@ _I created this non-GUI tool for replicating data from PostgreSQL database to an
 - `git clone https://github.com/mir1198yusuf/incremental-replication.git .`
 - `mv .env.sample .env`
 - Populate `.env` with your values.
+- `mv tables-config.sample.json tables-config.json`
 - Populate `tables-config.json` with your values. 
 - In your destination database, create the empty schema with same name as env variable `DEST_SCHEMA` (which will be same as env variable `SOURCE_SCHEMA`)
 - Start the replication by `node incremental_deduped_sync_pg_to_pg.js`
