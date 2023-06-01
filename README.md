@@ -5,7 +5,7 @@ _I created this non-GUI tool for replicating data from PostgreSQL database to an
 
 ### Features
 
-- It can handle source and destination databases to be on separate servers.
+- It can handle replication between source and destination databases which are on separate servers.
 - It automatically detects source-table schema changes before every sync. If detected, it resets the destination schema for that table & starts initial sync for that table.
 - It uses pg-dump for initial sync of a table, thus speeding up the initial sync time.
 - For subsequent syncs, it uses incremental-deduplication mode approach. 
@@ -24,7 +24,7 @@ _I created this non-GUI tool for replicating data from PostgreSQL database to an
 - No near-future plans to add parallelism in sync. For me, this (one table at a time) was required but it could be limitation for others.
 - Only `incremental-deduped` mode is supported for now. 
 - This will not work on Windows for now. This has been tested only on Ubuntu and Mac OS. Open a Node.js shell and run `process.platform`. If you get `linux` or `darwin`, this script will work.
-- To keep things simple at destination, it only syncs the table structure and data. It does not sync any type of constraints, custom types in destination. For `USER-DEFINED` type columns in source, it uses `text` type columns in destination. Please do not create any indexes, views, etc in destination as it will interfere will tool's normal functioning (when schema change is detected in source) and manual intervention will be needed.
+- To keep things simple at destination, it only syncs the base-table structure and data. It does not sync any type of constraints, custom types or views in destination. For `USER-DEFINED` type columns in source, it uses `text` type columns in destination. Please do not create any indexes, views, etc in destination as it will interfere will tool's normal functioning (when schema change is detected in source) and manual intervention will be needed.
 
 ### Roadmap
 
